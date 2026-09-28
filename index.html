@@ -150,14 +150,13 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #f1f5f8;
-            color: #1a252f;
+            background: #004d3d;
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             font-size: 1rem;
-            border: 1px solid #dcdfe6;
         }
 
         .card-right {
@@ -275,7 +274,7 @@
         }
         updateWeather();
 
-        // --- 2. HIPPISME VIA INJECTION JSONP (CONTOURNE LE BLOCAGE CORS) ---
+        // --- 2. RÉSULTATS TURF (VIA ALLORIGINS / JSONP) ---
         function updateTurfDateHeader() {
             const now = new Date();
             const days = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
@@ -284,83 +283,104 @@
         }
         updateTurfDateHeader();
 
-        // Callback appelé automatiquement lors du retour du script externe
-        window.handleTurfData = function(data) {
+        window.processPmuData = function(data) {
             const listContainer = document.getElementById('races-list');
-            
-            if (data && data.items && data.items.length > 0) {
-                listContainer.innerHTML = '';
-                const top5 = data.items.slice(0, 5);
+            try {
+                const parsed = JSON.parse(data.contents);
+                let completedRaces = [];
 
-                top5.forEach((item, index) => {
-                    const title = item.title || "Course PMU";
-                    const content = item.content || item.description || "";
-                    
-                    // Extraction dynamique des numéros d'arrivée
-                    const matches = content.match(/\b([1-9]|1[0-9]|20)\b/g) || [];
-                    const numbers = [...new Set(matches)].slice(0, 5);
+                if (parsed && parsed.programme && parsed.programme.reunions) {
+                    parsed.programme.reunions.forEach(reunion => {
+                        const rNum = `R${reunion.numOfficiel}`;
+                        const hippo = reunion.hippodrome ? reunion.hippodrome.libelleCourt : "Hippodrome";
 
-                    const rcMatch = title.match(/R\d+C\d+/i);
-                    const rcCode = rcMatch ? rcMatch[0] : `R1 C${index + 1}`;
-                    const rText = rcCode.substring(0, 2);
-                    const cText = rcCode.substring(2);
+                        if (reunion.courses) {
+                            reunion.courses.forEach(course => {
+                                const cNum = `C${course.numOrdre}`;
+                                const title = `${hippo} - ${course.libelle || 'Prix'}`;
+                                
+                                let arrivalNumbers = [];
+                                if (course.ordreArrivee && course.ordreArrivee.length > 0) {
+                                    arrivalNumbers = course.ordreArrivee.map(item => Array.isArray(item) ? item[0] : item).slice(0, 5);
+                                } else if (course.arriveeDefinitive && course.combinaisonArrivee) {
+                                    arrivalNumbers = course.combinaisonArrivee.split('-').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n)).slice(0, 5);
+                                }
 
-                    const cleanTitle = title.replace(/R\d+C\d+-?/i, '').trim() || "Prix Spie";
+                                if (arrivalNumbers.length > 0) {
+                                    const timeStr = course.heureDepart ? new Date(course.heureDepart).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+                                    completedRaces.push({
+                                        r: rNum,
+                                        c: cNum,
+                                        title: title,
+                                        nums: arrivalNumbers,
+                                        time: timeStr,
+                                        timestamp: course.heureDepart || 0
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
 
-                    const card = document.createElement('div');
-                    card.className = 'pmu-card';
+                if (completedRaces.length > 0) {
+                    completedRaces.sort((a, b) => b.timestamp - a.timestamp);
+                    const top5 = completedRaces.slice(0, 5);
 
-                    let ballsHtml = '';
-                    if (numbers.length > 0) {
-                        numbers.forEach(n => { ballsHtml += `<div class="ball">${n}</div>`; });
-                    } else {
-                        ballsHtml = '<span style="color:#a0aec0; font-size:0.9rem;">Résultat en cours</span>';
-                    }
-
-                    card.innerHTML = `
-                        <div class="card-left">
-                            <div class="rc-badge">
-                                <span>${rText}</span>
-                                <span>${cText}</span>
+                    listContainer.innerHTML = '';
+                    top5.forEach(race => {
+                        const ballsHtml = race.nums.map(n => `<div class="ball">${n}</div>`).join('');
+                        const card = document.createElement('div');
+                        card.className = 'pmu-card';
+                        card.innerHTML = `
+                            <div class="card-left">
+                                <div class="rc-badge">
+                                    <span>${race.r}</span>
+                                    <span>${race.c}</span>
+                                </div>
+                                <div class="race-info">
+                                    <div class="race-location-name">${race.title}</div>
+                                    <div class="race-details-sub">Arrivée confirmée</div>
+                                    <div class="number-balls">${ballsHtml}</div>
+                                </div>
                             </div>
-                            <div class="race-info">
-                                <div class="race-location-name">${cleanTitle}</div>
-                                <div class="race-details-sub">Arrivée confirmée</div>
-                                <div class="number-balls">${ballsHtml}</div>
+                            <div class="card-right">
+                                <div class="status-time">${race.time ? race.time + ' - ' : ''}Arrivée</div>
+                                <div class="status-text">Définitive</div>
                             </div>
-                        </div>
-                        <div class="card-right">
-                            <div class="status-time">Arrivée</div>
-                            <div class="status-text">Définitive</div>
-                        </div>
-                    `;
-                    listContainer.appendChild(card);
-                });
+                        `;
+                        listContainer.appendChild(card);
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.error("Erreur de décodage PMU :", e);
             }
+
+            listContainer.innerHTML = `
+                <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">
+                    Aucune arrivée enregistrée aujourd'hui pour le moment.
+                </div>
+            `;
         };
 
-        function fetchLatestRacesJSONP() {
-            // Nettoyage des anciens scripts pour éviter d'encombrer le DOM
-            const oldScript = document.getElementById('jsonp-turf-script');
+        function fetchTurfPMU() {
+            const oldScript = document.getElementById('jsonp-pmu-script');
             if (oldScript) oldScript.remove();
 
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            const targetUrl = `https://online.pmu.fr/rest/client/7/programme/${d}${m}${y}`;
+
             const script = document.createElement('script');
-            script.id = 'jsonp-turf-script';
-            script.src = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.geny.com%2Frss%2Farrivees-et-rapports&callback=handleTurfData';
-            
-            script.onerror = function() {
-                document.getElementById('races-list').innerHTML = `
-                    <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">
-                        Erreur de connexion aux résultats.
-                    </div>
-                `;
-            };
-            
+            script.id = 'jsonp-pmu-script';
+            script.src = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&callback=processPmuData`;
             document.body.appendChild(script);
         }
 
-        fetchLatestRacesJSONP();
-        setInterval(fetchLatestRacesJSONP, 60000); // Mise à jour toute les minutes
+        fetchTurfPMU();
+        setInterval(fetchTurfPMU, 60000); // Rafraîchissement chaque minute
 
         // --- 3. HORLOGE ---
         function updateClock() {
