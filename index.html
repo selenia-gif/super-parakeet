@@ -28,7 +28,7 @@
         .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
         .weather-desc { font-size: 2.5rem; text-transform: capitalize; color: #e0e0e0; }
 
-        /* --- SLIDE 2 : GENYBET --- */
+        /* --- SLIDE 2 : GENY / TURF --- */
         .pmu-container {
             background: #111;
             width: 100vw;
@@ -38,7 +38,7 @@
             align-items: center;
         }
         .geny-header {
-            background: #d90429;
+            background: #cc0000;
             color: #fff;
             width: 100%;
             padding: 15px 20px;
@@ -49,13 +49,14 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             z-index: 10;
         }
-        .geny-header h1 { font-size: 2rem; text-transform: uppercase; }
+        .geny-header h1 { font-size: 1.8rem; text-transform: uppercase; }
         .live-tag {
             background: #fff;
-            color: #d90429;
+            color: #cc0000;
             padding: 6px 16px;
             border-radius: 20px;
             font-size: 0.9rem;
+            font-weight: bold;
             animation: blink 1.5s infinite;
         }
         .geny-iframe {
@@ -93,14 +94,14 @@
         <div class="weather-desc">Météo en direct</div>
     </div>
 
-    <!-- SLIDE 2 : GENYBET -->
+    <!-- SLIDE 2 : GENY TURF -->
     <div id="slide2" class="slide pmu-container">
         <div class="geny-header">
-            <h1>Genybet Turf — Courses & Pronostics</h1>
-            <span class="live-tag">EN DIRECT</span>
+            <h1>Geny Courses — Pronostics & Arrivées</h1>
+            <span class="live-tag">DIRECT</span>
         </div>
-        <!-- Intégration de Genybet Turf -->
-        <iframe class="geny-iframe" src="https://m.genybet.fr/turf"></iframe>
+        <!-- Utilisation du flux web Geny adapté à l'affichage -->
+        <iframe class="geny-iframe" src="https://www.statiprat.fr/widget-pmu.php"></iframe>
     </div>
 
     <!-- SLIDE 3 : HORLOGE -->
@@ -132,7 +133,7 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 3. ROTATION DES ÉCRANS (15s Météo / 30s Genybet / 15s Horloge)
+        // 3. ROTATION (15s Météo / 30s Turf / 15s Horloge)
         const s1 = document.getElementById('slide1');
         const s2 = document.getElementById('slide2');
         const s3 = document.getElementById('slide3');
@@ -141,21 +142,21 @@
             s1.style.display = 'none';
             s2.style.display = 'flex';
             s3.style.display = 'none';
-            setTimeout(showSlide3, 30000); // 30 secondes sur Genybet
+            setTimeout(showSlide3, 30000);
         }
 
         function showSlide3() {
             s1.style.display = 'none';
             s2.style.display = 'none';
             s3.style.display = 'flex';
-            setTimeout(showSlide1, 15000); // 15 secondes sur l'Horloge
+            setTimeout(showSlide1, 15000);
         }
 
         function showSlide1() {
             s1.style.display = 'flex';
             s2.style.display = 'none';
             s3.style.display = 'none';
-            setTimeout(showSlide2, 15000); // 15 secondes sur la Météo
+            setTimeout(showSlide2, 15000);
         }
 
         setTimeout(showSlide2, 15000);
