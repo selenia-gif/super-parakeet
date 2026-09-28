@@ -15,7 +15,7 @@
             border: none;
         }
 
-        /* --- SLIDE 1 : MÉTÉO + PRÉVISIONS 7 JOURS --- */
+        /* --- SLIDE 1 : MÉTÉO --- */
         .weather-container {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: #fff;
@@ -62,7 +62,7 @@
         .temp-max { color: #ffffff; }
         .temp-min { color: #a0aec0; }
 
-        /* --- SLIDE 2 : HIPPIQUE PMU --- */
+        /* --- SLIDE 2 : HIPPIQUE --- */
         .turf-container {
             background: #eef4f8;
             padding: 25px;
@@ -206,10 +206,10 @@
     <div id="slide2" class="slide turf-container">
         <div class="turf-header-bar">
             <div class="date-badge" id="currentDateBadge">Aujourd'hui</div>
-            <div class="turf-title">Dernières Arrivées PMU</div>
+            <div class="turf-title">Dernières Arrivées</div>
         </div>
         <div class="cards-list" id="races-list">
-            <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">Chargement des résultats PMU...</div>
+            <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">Chargement des résultats...</div>
         </div>
     </div>
 
@@ -275,7 +275,7 @@
         }
         updateWeather();
 
-        // --- 2. COURSES PMU DIRECTS (AVEC PROXY CORS) ---
+        // --- 2. HIPPISME VIA INJECTION JSONP (CONTOURNE LE BLOCAGE CORS) ---
         function updateTurfDateHeader() {
             const now = new Date();
             const days = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
@@ -284,103 +284,83 @@
         }
         updateTurfDateHeader();
 
-        async function fetchLatest5RacesPMU() {
+        // Callback appelé automatiquement lors du retour du script externe
+        window.handleTurfData = function(data) {
             const listContainer = document.getElementById('races-list');
-            const now = new Date();
-            const d = String(now.getDate()).padStart(2, '0');
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const y = now.getFullYear();
-            const dateFormatted = `${d}${m}${y}`;
+            
+            if (data && data.items && data.items.length > 0) {
+                listContainer.innerHTML = '';
+                const top5 = data.items.slice(0, 5);
 
-            // Utilisation du proxy CORS pour contourner le blocage du navigateur
-            const targetApiUrl = `https://online.pmu.fr/rest/client/7/programme/${dateFormatted}`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetApiUrl)}`;
+                top5.forEach((item, index) => {
+                    const title = item.title || "Course PMU";
+                    const content = item.content || item.description || "";
+                    
+                    // Extraction dynamique des numéros d'arrivée
+                    const matches = content.match(/\b([1-9]|1[0-9]|20)\b/g) || [];
+                    const numbers = [...new Set(matches)].slice(0, 5);
 
-            try {
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
+                    const rcMatch = title.match(/R\d+C\d+/i);
+                    const rcCode = rcMatch ? rcMatch[0] : `R1 C${index + 1}`;
+                    const rText = rcCode.substring(0, 2);
+                    const cText = rcCode.substring(2);
 
-                let completedRaces = [];
+                    const cleanTitle = title.replace(/R\d+C\d+-?/i, '').trim() || "Prix Spie";
 
-                if (data && data.programme && data.programme.reunions) {
-                    data.programme.reunions.forEach(reunion => {
-                        const rNum = `R${reunion.numOfficiel}`;
-                        const hippo = reunion.hippodrome ? reunion.hippodrome.libelleCourt : "Hippodrome";
+                    const card = document.createElement('div');
+                    card.className = 'pmu-card';
 
-                        if (reunion.courses) {
-                            reunion.courses.forEach(course => {
-                                const cNum = `C${course.numOrdre}`;
-                                const title = `${hippo} - ${course.libelle || 'Prix'}`;
-                                const discipline = course.discipline || "Plat";
-                                
-                                let arrivalNumbers = [];
-                                if (course.ordreArrivee && course.ordreArrivee.length > 0) {
-                                    arrivalNumbers = course.ordreArrivee.map(item => Array.isArray(item) ? item[0] : item).slice(0, 5);
-                                } else if (course.arriveeDefinitive && course.combinaisonArrivee) {
-                                    arrivalNumbers = course.combinaisonArrivee.split('-').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n)).slice(0, 5);
-                                }
+                    let ballsHtml = '';
+                    if (numbers.length > 0) {
+                        numbers.forEach(n => { ballsHtml += `<div class="ball">${n}</div>`; });
+                    } else {
+                        ballsHtml = '<span style="color:#a0aec0; font-size:0.9rem;">Résultat en cours</span>';
+                    }
 
-                                if (arrivalNumbers.length > 0) {
-                                    const timeStr = course.heureDepart ? new Date(course.heureDepart).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
-                                    completedRaces.push({
-                                        r: rNum,
-                                        c: cNum,
-                                        title: title,
-                                        sub: `${discipline} - Arrivée confirmée`,
-                                        nums: arrivalNumbers,
-                                        time: timeStr,
-                                        timestamp: course.heureDepart || 0
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-
-                if (completedRaces.length > 0) {
-                    completedRaces.sort((a, b) => b.timestamp - a.timestamp);
-                    const top5 = completedRaces.slice(0, 5);
-
-                    listContainer.innerHTML = '';
-                    top5.forEach(race => {
-                        const ballsHtml = race.nums.map(n => `<div class="ball">${n}</div>`).join('');
-                        const card = document.createElement('div');
-                        card.className = 'pmu-card';
-                        card.innerHTML = `
-                            <div class="card-left">
-                                <div class="rc-badge">
-                                    <span>${race.r}</span>
-                                    <span>${race.c}</span>
-                                </div>
-                                <div class="race-info">
-                                    <div class="race-location-name">${race.title}</div>
-                                    <div class="race-details-sub">${race.sub}</div>
-                                    <div class="number-balls">${ballsHtml}</div>
-                                </div>
+                    card.innerHTML = `
+                        <div class="card-left">
+                            <div class="rc-badge">
+                                <span>${rText}</span>
+                                <span>${cText}</span>
                             </div>
-                            <div class="card-right">
-                                <div class="status-time">${race.time ? race.time + ' - ' : ''}Arrivée</div>
-                                <div class="status-text">Définitive</div>
+                            <div class="race-info">
+                                <div class="race-location-name">${cleanTitle}</div>
+                                <div class="race-details-sub">Arrivée confirmée</div>
+                                <div class="number-balls">${ballsHtml}</div>
                             </div>
-                        `;
-                        listContainer.appendChild(card);
-                    });
-                    return;
-                }
-            } catch (e) {
-                console.warn("Erreur chargement PMU via Proxy CORS :", e);
+                        </div>
+                        <div class="card-right">
+                            <div class="status-time">Arrivée</div>
+                            <div class="status-text">Définitive</div>
+                        </div>
+                    `;
+                    listContainer.appendChild(card);
+                });
             }
+        };
 
-            // Message informatif si aucune course n'est achevée à cette heure
-            listContainer.innerHTML = `
-                <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">
-                    Aucune arrivée définitive enregistrée pour le moment aujourd'hui.
-                </div>
-            `;
+        function fetchLatestRacesJSONP() {
+            // Nettoyage des anciens scripts pour éviter d'encombrer le DOM
+            const oldScript = document.getElementById('jsonp-turf-script');
+            if (oldScript) oldScript.remove();
+
+            const script = document.createElement('script');
+            script.id = 'jsonp-turf-script';
+            script.src = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.geny.com%2Frss%2Farrivees-et-rapports&callback=handleTurfData';
+            
+            script.onerror = function() {
+                document.getElementById('races-list').innerHTML = `
+                    <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">
+                        Erreur de connexion aux résultats.
+                    </div>
+                `;
+            };
+            
+            document.body.appendChild(script);
         }
 
-        fetchLatest5RacesPMU();
-        setInterval(fetchLatest5RacesPMU, 60000);
+        fetchLatestRacesJSONP();
+        setInterval(fetchLatestRacesJSONP, 60000); // Mise à jour toute les minutes
 
         // --- 3. HORLOGE ---
         function updateClock() {
