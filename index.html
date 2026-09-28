@@ -34,14 +34,10 @@
             gap: 20px; 
             margin: 10px 0 25px 0; 
         }
-        .weather-current-icon {
-            font-size: 5rem;
-            line-height: 1;
-        }
+        .weather-current-icon { font-size: 5rem; line-height: 1; }
         .weather-temp { font-size: 6rem; font-weight: bold; color: #f2ab00; line-height: 1; }
         .weather-desc { font-size: 1.8rem; text-transform: capitalize; color: #e0e0e0; text-align: left; }
 
-        /* Grille des 7 jours */
         .forecast-grid {
             display: flex;
             gap: 12px;
@@ -66,7 +62,7 @@
         .temp-max { color: #ffffff; }
         .temp-min { color: #a0aec0; }
 
-        /* --- SLIDE 2 : HIPPIQUE (STYLE ÉPURÉ PMU) --- */
+        /* --- SLIDE 2 : HIPPIQUE PMU --- */
         .turf-container {
             background: #eef4f8;
             padding: 25px;
@@ -146,7 +142,7 @@
             flex-direction: column;
             gap: 4px;
         }
-        .race-location-name { font-size: 1.25rem; font-weight: 700; color: #2c3e50; }
+        .race-location-name { font-size: 1.2rem; font-weight: 700; color: #2c3e50; }
         .race-details-sub { font-size: 0.95rem; color: #7f8c8d; font-weight: 500; }
 
         .number-balls { display: flex; gap: 8px; margin-top: 6px; }
@@ -193,7 +189,7 @@
 </head>
 <body>
 
-    <!-- SLIDE 1 : MÉTÉO + PICTOGRAMMES + 7 JOURS -->
+    <!-- SLIDE 1 : MÉTÉO -->
     <div id="slide1" class="slide weather-container" style="display: flex;">
         <div class="weather-city">Saint-Priest</div>
         <div class="weather-current">
@@ -201,20 +197,19 @@
             <div class="weather-temp" id="temp">--°C</div>
             <div class="weather-desc">Météo en direct<br><span style="font-size: 1.2rem; color: #f2ab00;">Prévisions 7 jours</span></div>
         </div>
-        
         <div class="forecast-grid" id="forecastGrid">
             <div style="color: #ccc;">Chargement des prévisions...</div>
         </div>
     </div>
 
-    <!-- SLIDE 2 : 5 DERNIÈRES COURSES -->
+    <!-- SLIDE 2 : COURSES PMU -->
     <div id="slide2" class="slide turf-container">
         <div class="turf-header-bar">
             <div class="date-badge" id="currentDateBadge">Aujourd'hui</div>
-            <div class="turf-title">Dernières Arrivées</div>
+            <div class="turf-title">Dernières Arrivées PMU</div>
         </div>
         <div class="cards-list" id="races-list">
-            <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">Chargement des résultats...</div>
+            <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">Chargement des résultats PMU...</div>
         </div>
     </div>
 
@@ -225,38 +220,34 @@
     </div>
 
     <script>
-        // Fonction pour associer un code météo Open-Meteo à un pictogramme
+        // --- 1. MÉTÉO ---
         function getWeatherIcon(code) {
-            if (code === 0) return '☀️'; // Ensoleillé / Dégagé
-            if (code === 1 || code === 2) return '🌤️'; // Éclaircies
-            if (code === 3) return '☁️'; // Nuageux
-            if (code >= 45 && code <= 48) return '🌫️'; // Brouillard
-            if (code >= 51 && code <= 67) return '🌧️'; // Pluie / Bruine
-            if (code >= 71 && code <= 77) return '❄️'; // Neige
-            if (code >= 80 && code <= 82) return '🌦️'; // Averses
-            if (code >= 85 && code <= 86) return '🌨️'; // Averses de neige
-            if (code >= 95 && code <= 99) return '⛈️'; // Orage
+            if (code === 0) return '☀️';
+            if (code === 1 || code === 2) return '🌤️';
+            if (code === 3) return '☁️';
+            if (code >= 45 && code <= 48) return '🌫️';
+            if (code >= 51 && code <= 67) return '🌧️';
+            if (code >= 71 && code <= 77) return '❄️';
+            if (code >= 80 && code <= 82) return '🌦️';
+            if (code >= 85 && code <= 86) return '🌨️';
+            if (code >= 95 && code <= 99) return '⛈️';
             return '☀️';
         }
 
-        // 1. MÉTÉO ET PRÉVISIONS 7 JOURS AVEC PICTOGRAMMES
         function updateWeather() {
             const url = 'https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis';
             
             fetch(url)
                 .then(r => r.json())
                 .then(d => {
-                    // Météo Actuelle
                     if (d && d.current_weather) {
                         document.getElementById('temp').textContent = Math.round(d.current_weather.temperature) + '°C';
                         document.getElementById('currentIcon').textContent = getWeatherIcon(d.current_weather.weathercode);
                     }
 
-                    // Prévisions 7 Jours
                     if (d && d.daily && d.daily.time) {
                         const grid = document.getElementById('forecastGrid');
                         grid.innerHTML = '';
-
                         const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
                         for (let i = 0; i < 7; i++) {
@@ -280,75 +271,94 @@
                         }
                     }
                 })
-                .catch(() => { 
-                    document.getElementById('temp').textContent = '--°C'; 
-                });
+                .catch(() => { document.getElementById('temp').textContent = '--°C'; });
         }
         updateWeather();
 
-        // Date en-tête Turf
+        // --- 2. COURSES PMU DIRECTS (API DIRECTE PMU.FR) ---
         function updateTurfDateHeader() {
             const now = new Date();
             const days = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
             const months = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
-            const dateStr = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
-            document.getElementById('currentDateBadge').textContent = dateStr;
+            document.getElementById('currentDateBadge').textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
         }
         updateTurfDateHeader();
 
-        // 2. RÉCUPÉRATION DES COURSES
-        async function fetchLatest5Races() {
+        async function fetchLatest5RacesPMU() {
             const listContainer = document.getElementById('races-list');
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            const dateFormatted = `${d}${m}${y}`;
 
             try {
-                const feedUrl = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.geny.com%2Frss%2Farrivees-et-rapports';
-                const res = await fetch(feedUrl);
-                const data = await res.json();
+                // API PMU Officielle
+                const response = await fetch(`https://online.pmu.fr/rest/client/7/programme/${dateFormatted}`);
+                const data = await response.json();
 
-                if (data && data.items && data.items.length > 0) {
+                let completedRaces = [];
+
+                if (data && data.programme && data.programme.reunions) {
+                    data.programme.reunions.forEach(reunion => {
+                        const rNum = `R${reunion.numOfficiel}`;
+                        const hippo = reunion.hippodrome ? reunion.hippodrome.libelleCourt : "Hippodrome";
+
+                        if (reunion.courses) {
+                            reunion.courses.forEach(course => {
+                                const cNum = `C${course.numOrdre}`;
+                                const title = `${hippo} - ${course.libelle || 'Prix'}`;
+                                const discipline = course.discipline || "Plat";
+                                
+                                // Extraction de l'arrivée si disponible
+                                let arrivalNumbers = [];
+                                if (course.ordreArrivee && course.ordreArrivee.length > 0) {
+                                    arrivalNumbers = course.ordreArrivee.map(item => Array.isArray(item) ? item[0] : item).slice(0, 5);
+                                } else if (course.arriveeDefinitive && course.combinaisonArrivee) {
+                                    arrivalNumbers = course.combinaisonArrivee.split('-').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n)).slice(0, 5);
+                                }
+
+                                if (arrivalNumbers.length > 0) {
+                                    const timeStr = course.heureDepart ? new Date(course.heureDepart).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+                                    completedRaces.push({
+                                        r: rNum,
+                                        c: cNum,
+                                        title: title,
+                                        sub: `${discipline} - Arrivée confirmée`,
+                                        nums: arrivalNumbers,
+                                        time: timeStr,
+                                        timestamp: course.heureDepart || 0
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (completedRaces.length > 0) {
+                    // Trier par heure de départ descendante (la plus récente en premier)
+                    completedRaces.sort((a, b) => b.timestamp - a.timestamp);
+                    const top5 = completedRaces.slice(0, 5);
+
                     listContainer.innerHTML = '';
-                    const top5 = data.items.slice(0, 5);
-
-                    top5.forEach((item, index) => {
-                        const title = item.title || "Course PMU";
-                        const content = item.content || item.description || "";
-                        
-                        const matches = content.match(/\b([1-9]|1[0-9]|20)\b/g) || [];
-                        const numbers = [...new Set(matches)].slice(0, 5);
-
-                        const rcMatch = title.match(/R\d+C\d+/i);
-                        const rcCode = rcMatch ? rcMatch[0] : `R1 C${index + 1}`;
-                        const rText = rcCode.substring(0, 2);
-                        const cText = rcCode.substring(2);
-
-                        const cleanTitle = title.replace(/R\d+C\d+-?/i, '').trim() || "Prix Spie";
-
+                    top5.forEach(race => {
+                        const ballsHtml = race.nums.map(n => `<div class="ball">${n}</div>`).join('');
                         const card = document.createElement('div');
                         card.className = 'pmu-card';
-
-                        let ballsHtml = '';
-                        if (numbers.length > 0) {
-                            numbers.forEach(n => {
-                                ballsHtml += `<div class="ball">${n}</div>`;
-                            });
-                        } else {
-                            ballsHtml = '<span style="color:#a0aec0; font-size:0.9rem;">En attente des résultats</span>';
-                        }
-
                         card.innerHTML = `
                             <div class="card-left">
                                 <div class="rc-badge">
-                                    <span>${rText}</span>
-                                    <span>${cText}</span>
+                                    <span>${race.r}</span>
+                                    <span>${race.c}</span>
                                 </div>
                                 <div class="race-info">
-                                    <div class="race-location-name">${cleanTitle}</div>
-                                    <div class="race-details-sub">Plat - Arrivée confirmée</div>
+                                    <div class="race-location-name">${race.title}</div>
+                                    <div class="race-details-sub">${race.sub}</div>
                                     <div class="number-balls">${ballsHtml}</div>
                                 </div>
                             </div>
                             <div class="card-right">
-                                <div class="status-time">Arrivée</div>
+                                <div class="status-time">${race.time ? race.time + ' - ' : ''}Arrivée</div>
                                 <div class="status-text">Définitive</div>
                             </div>
                         `;
@@ -357,48 +367,21 @@
                     return;
                 }
             } catch (e) {
-                console.warn("Affichage de secours :", e);
+                console.warn("Erreur chargement PMU :", e);
             }
 
-            // Secours
-            const fallbackData = [
-                { r: "R2", c: "C2", name: "Prix Spie", sub: "Plat - 3000m - 7 partants", nums: [1, 5, 4, 7, 2], time: "" },
-                { r: "R3", c: "C2", name: "Casablanca - Prix Poesie", sub: "Plat - 1900m - 7 partants", nums: [1, 3, 6, 2, 4], time: "11h35" },
-                { r: "R2", c: "C3", name: "Craon - Prix Loxam", sub: "Attelé - 2750m - 18 partants", nums: [17, 1, 2, 16, 13], time: "11h51" },
-                { r: "R3", c: "C3", name: "Casablanca - Prix Mezouar", sub: "Plat - 2100m - 10 partants", nums: [3, 2, 4, 1, 5], time: "12h07" },
-                { r: "R2", c: "C4", name: "Craon - Prix de la Communauté", sub: "Haies - 3700m - 12 partants", nums: [6, 9, 1, 4, 11], time: "12h23" }
-            ];
-
-            listContainer.innerHTML = '';
-            fallbackData.forEach(d => {
-                const balls = d.nums.map(n => `<div class="ball">${n}</div>`).join('');
-                const card = document.createElement('div');
-                card.className = 'pmu-card';
-                card.innerHTML = `
-                    <div class="card-left">
-                        <div class="rc-badge">
-                            <span>${d.r}</span>
-                            <span>${d.c}</span>
-                        </div>
-                        <div class="race-info">
-                            <div class="race-location-name">${d.name}</div>
-                            <div class="race-details-sub">${d.sub}</div>
-                            <div class="number-balls">${balls}</div>
-                        </div>
-                    </div>
-                    <div class="card-right">
-                        <div class="status-time">${d.time ? d.time + ' - ' : ''}Arrivée</div>
-                        <div class="status-text">Définitive</div>
-                    </div>
-                `;
-                listContainer.appendChild(card);
-            });
+            // Affichage d'attente si aucune course n'est encore terminée aujourd'hui
+            listContainer.innerHTML = `
+                <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">
+                    En attente des premières arrivées de la journée...
+                </div>
+            `;
         }
 
-        fetchLatest5Races();
-        setInterval(fetchLatest5Races, 180000);
+        fetchLatest5RacesPMU();
+        setInterval(fetchLatest5RacesPMU, 60000); // Mise à jour automatique chaque minute
 
-        // 3. HORLOGE
+        // --- 3. HORLOGE ---
         function updateClock() {
             const now = new Date();
             document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -407,11 +390,10 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 4. ROTATION DES ÉCRANS (20s par slide)
+        // --- 4. ROTATION DES ÉCRANS (20s) ---
         const s1 = document.getElementById('slide1');
         const s2 = document.getElementById('slide2');
         const s3 = document.getElementById('slide3');
-
         const DUREE_SLIDE = 20000;
 
         function showSlide2() {
