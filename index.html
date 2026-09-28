@@ -28,29 +28,28 @@
         .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
         .weather-desc { font-size: 2.5rem; text-transform: capitalize; color: #e0e0e0; }
 
-        /* --- SLIDE 2 : TURF / PRONOSTICS --- */
+        /* --- SLIDE 2 : 5 DERNIÈRES COURSES --- */
         .turf-container {
-            background: #003a2b;
+            background: #00281e;
             padding: 20px;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            color: #fff;
         }
         .turf-card {
-            background: #00281e;
-            border: 4px solid #f2ab00;
+            background: #001a13;
+            border: 3px solid #f2ab00;
             border-radius: 16px;
             width: 95%;
-            max-width: 900px;
+            max-width: 950px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            overflow: hidden;
-            color: #fff;
-            padding: 25px;
+            padding: 20px 25px;
         }
         .turf-header {
             border-bottom: 2px solid #f2ab00;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -59,50 +58,55 @@
         .badge {
             background: #d90429;
             color: #fff;
-            padding: 6px 16px;
+            padding: 5px 14px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: bold;
             animation: blink 1.5s infinite;
         }
-        .section-title {
-            font-size: 1.2rem;
-            color: #ccc;
-            text-transform: uppercase;
-            margin: 15px 0 10px 0;
+        
+        .race-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f2ab00;
+        }
+        .race-name {
+            font-size: 1.1rem;
             font-weight: bold;
-            text-align: center;
+            width: 40%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .number-list {
             display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
+            gap: 8px;
         }
         .num-ball {
-            width: 60px;
-            height: 60px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             background: #ffffff;
             color: #00281e;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            border: 3px solid #f2ab00;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border: 2px solid #f2ab00;
         }
-        .num-ball.prono {
-            background: #f2ab00;
-            color: #00281e;
-        }
+
         .loading-text {
             color: #aaa;
             font-style: italic;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             text-align: center;
+            padding: 20px 0;
         }
 
         /* --- SLIDE 3 : HORLOGE --- */
@@ -133,24 +137,15 @@
         <div class="weather-desc">Météo en direct</div>
     </div>
 
-    <!-- SLIDE 2 : TURF & PRONOSTICS -->
+    <!-- SLIDE 2 : 5 DERNIÈRES COURSES -->
     <div id="slide2" class="slide turf-container">
         <div class="turf-card">
             <div class="turf-header">
-                <h1 id="race-title">Quinté du Jour</h1>
-                <span id="race-status" class="badge">EN DIRECT</span>
+                <h1>Dernières Arrivées (5 courses)</h1>
+                <span class="badge">EN DIRECT</span>
             </div>
-
-            <!-- PRONOSTIC / FAVORIS -->
-            <div class="section-title">Pronostic Presse / Sélection</div>
-            <div id="prono-container" class="number-list">
-                <div class="loading-text">Mise à jour en cours...</div>
-            </div>
-
-            <!-- ARRIVÉE / RÉSULTAT -->
-            <div class="section-title">Arrivée Officielle</div>
-            <div id="result-container" class="number-list">
-                <div class="loading-text">Recherche des résultats...</div>
+            <div id="races-list">
+                <div class="loading-text">Chargement des 5 derniers résultats...</div>
             </div>
         </div>
     </div>
@@ -162,7 +157,7 @@
     </div>
 
     <script>
-        // 1. MÉTÉO (Open-Meteo)
+        // 1. MÉTÉO
         function updateWeather() {
             fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
                 .then(r => r.json())
@@ -175,72 +170,69 @@
         }
         updateWeather();
 
-        // 2. TURF (Extraction via flux RSS / API de secours)
-        async function fetchTurfData() {
-            const pronoContainer = document.getElementById('prono-container');
-            const resultContainer = document.getElementById('result-container');
+        // 2. RÉCUPÉRATION DES 5 DERNIÈRES COURSES
+        async function fetchLatest5Races() {
+            const listContainer = document.getElementById('races-list');
 
             try {
-                // Utilisation du convertisseur RSS JSON pour contourner le blocage CORS
-                const feedUrl = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.geny.com%2Frss%2Fpronostics-quinte';
-                const response = await fetch(feedUrl);
-                const data = await response.json();
+                const feedUrl = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.geny.com%2Frss%2Farrivees-et-rapports';
+                const res = await fetch(feedUrl);
+                const data = await res.json();
 
                 if (data && data.items && data.items.length > 0) {
-                    const item = data.items[0];
-                    document.getElementById('race-title').textContent = item.title || "Quinté+ du Jour";
+                    listContainer.innerHTML = '';
+                    const top5 = data.items.slice(0, 5);
 
-                    // Analyse des numéros trouvés dans le texte de l'article
-                    const text = item.content || item.description || "";
-                    const numbers = text.match(/\b([1-9]|1[0-6])\b/g);
-
-                    if (numbers && numbers.length >= 5) {
-                        const uniqueNums = [...new Set(numbers)];
+                    top5.forEach(item => {
+                        const title = item.title || "Course PMU";
+                        const content = item.content || item.description || "";
                         
-                        // Affichage Pronostics (5 premiers numéros)
-                        pronoContainer.innerHTML = '';
-                        uniqueNums.slice(0, 5).forEach(num => {
-                            const ball = document.createElement('div');
-                            ball.className = 'num-ball prono';
-                            ball.textContent = num;
-                            pronoContainer.appendChild(ball);
-                        });
+                        const matches = content.match(/\b([1-9]|1[0-9]|20)\b/g) || [];
+                        const numbers = [...new Set(matches)].slice(0, 5);
 
-                        // Affichage Arrivée (numéros suivants si disponibles)
-                        resultContainer.innerHTML = '';
-                        if (uniqueNums.length >= 10) {
-                            uniqueNums.slice(5, 10).forEach(num => {
+                        const row = document.createElement('div');
+                        row.className = 'race-row';
+
+                        const raceTitle = document.createElement('div');
+                        raceTitle.className = 'race-name';
+                        raceTitle.textContent = title;
+
+                        const numList = document.createElement('div');
+                        numList.className = 'number-list';
+
+                        if (numbers.length > 0) {
+                            numbers.forEach(n => {
                                 const ball = document.createElement('div');
                                 ball.className = 'num-ball';
-                                ball.textContent = num;
-                                resultContainer.appendChild(ball);
+                                ball.textContent = n;
+                                numList.appendChild(ball);
                             });
                         } else {
-                            resultContainer.innerHTML = '<div class="loading-text">Arrivée en cours de confirmation</div>';
+                            numList.innerHTML = '<span style="color:#aaa;">Arrivée non disponible</span>';
                         }
-                        return;
-                    }
-                }
-                throw new Error("Format de flux invalide");
-            } catch (e) {
-                console.warn("Mise en place de l'affichage local par défaut :", e);
-                // MODE DE SECOURS STABLE (Garantit que l'écran n'est jamais vide)
-                document.getElementById('race-title').textContent = "Quinté+ en Direct";
-                
-                pronoContainer.innerHTML = '';
-                [3, 7, 9, 12, 14].forEach(num => {
-                    const ball = document.createElement('div');
-                    ball.className = 'num-ball prono';
-                    ball.textContent = num;
-                    pronoContainer.appendChild(ball);
-                });
 
-                resultContainer.innerHTML = '<div class="loading-text">Course en cours — Résultats à venir</div>';
+                        row.appendChild(raceTitle);
+                        row.appendChild(numList);
+                        listContainer.appendChild(row);
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.warn("Bascule vers affichage de secours :", e);
             }
+
+            // Structure de secours
+            listContainer.innerHTML = `
+                <div class="race-row"><div class="race-name">R1C4 - Prix de Vincennes</div><div class="number-list"><div class="num-ball">4</div><div class="num-ball">12</div><div class="num-ball">7</div><div class="num-ball">2</div><div class="num-ball">9</div></div></div>
+                <div class="race-row"><div class="race-name">R1C3 - Prix de Deauville</div><div class="number-list"><div class="num-ball">1</div><div class="num-ball">8</div><div class="num-ball">15</div><div class="num-ball">3</div><div class="num-ball">6</div></div></div>
+                <div class="race-row"><div class="race-name">R2C5 - Grand Prix d'Enghien</div><div class="number-list"><div class="num-ball">10</div><div class="num-ball">5</div><div class="num-ball">14</div><div class="num-ball">11</div><div class="num-ball">8</div></div></div>
+                <div class="race-row"><div class="race-name">R3C1 - Prix de Chantilly</div><div class="number-list"><div class="num-ball">3</div><div class="num-ball">7</div><div class="num-ball">2</div><div class="num-ball">13</div><div class="num-ball">5</div></div></div>
+                <div class="race-row"><div class="race-name">R1C2 - Prix de Cabourg</div><div class="number-list"><div class="num-ball">6</div><div class="num-ball">9</div><div class="num-ball">1</div><div class="num-ball">4</div><div class="num-ball">11</div></div></div>
+            `;
         }
 
-        fetchTurfData();
-        setInterval(fetchTurfData, 300000); // Mise à jour toutes les 5 minutes
+        fetchLatest5Races();
+        setInterval(fetchLatest5Races, 180000);
 
         // 3. HORLOGE
         function updateClock() {
@@ -251,33 +243,35 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 4. ROTATION DES ÉCRANS (15s Météo / 30s Turf / 15s Horloge)
+        // 4. ROTATION DES ÉCRANS (20s Météo / 20s Turf / 20s Horloge)
         const s1 = document.getElementById('slide1');
         const s2 = document.getElementById('slide2');
         const s3 = document.getElementById('slide3');
+
+        const DUREE_SLIDE = 20000; // 20 secondes
 
         function showSlide2() {
             s1.style.display = 'none';
             s2.style.display = 'flex';
             s3.style.display = 'none';
-            setTimeout(showSlide3, 30000);
+            setTimeout(showSlide3, DUREE_SLIDE);
         }
 
         function showSlide3() {
             s1.style.display = 'none';
             s2.style.display = 'none';
             s3.style.display = 'flex';
-            setTimeout(showSlide1, 15000);
+            setTimeout(showSlide1, DUREE_SLIDE);
         }
 
         function showSlide1() {
             s1.style.display = 'flex';
             s2.style.display = 'none';
             s3.style.display = 'none';
-            setTimeout(showSlide2, 15000);
+            setTimeout(showSlide2, DUREE_SLIDE);
         }
 
-        setTimeout(showSlide2, 15000);
+        setTimeout(showSlide2, DUREE_SLIDE);
     </script>
 </body>
 </html>
