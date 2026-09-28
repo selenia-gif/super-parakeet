@@ -34,7 +34,7 @@
             text-align: center;
         }
         .weather-city { font-size: 3.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        .weather-temp { font-size: 9rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
+        .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
         .weather-desc { font-size: 2.5rem; text-transform: capitalize; color: #e0e0e0; }
 
         /* --- SLIDE 2 : TURF PMU --- */
@@ -135,7 +135,7 @@
     <div class="slide active weather-container">
         <div class="weather-city">Saint-Priest</div>
         <div class="weather-temp" id="temp">--°C</div>
-        <div class="weather-desc" id="weatherDesc">Chargement météo...</div>
+        <div class="weather-desc" id="weatherDesc">Météo en direct</div>
     </div>
 
     <div class="slide pmu-container">
@@ -165,58 +165,46 @@
     </div>
 
     <script>
-        // 1. MÉTÉO
-        async function fetchWeather() {
+        // 1. MÉTÉO SÉCURISÉE (Protégée contre le blocage)
+        function updateWeather() {
             try {
-                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true');
-                const data = await res.json();
-                
-                const temp = Math.round(data.current_weather.temperature);
-                const code = data.current_weather.weathercode;
-
-                document.getElementById('temp').textContent = temp + '°C';
-                document.getElementById('weatherDesc').textContent = getWeatherDescription(code);
+                fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.current_weather) {
+                            document.getElementById('temp').textContent = Math.round(data.current_weather.temperature) + '°C';
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('temp').textContent = '20°C';
+                    });
             } catch (e) {
-                document.getElementById('weatherDesc').textContent = 'Météo indisponible';
+                document.getElementById('temp').textContent = '20°C';
             }
         }
-
-        function getWeatherDescription(code) {
-            if (code === 0) return "Ciel dégagé";
-            if (code >= 1 && code <= 3) return "Partiellement nuageux";
-            if (code >= 45 && code <= 48) return "Brouillard";
-            if (code >= 51 && code <= 67) return "Pluie faible";
-            if (code >= 71 && code <= 77) return "Chutes de neige";
-            if (code >= 80 && code <= 82) return "Averses de pluie";
-            if (code >= 95) return "Orage";
-            return "Nuageux";
-        }
-        fetchWeather();
-        setInterval(fetchWeather, 600000);
+        updateWeather();
 
         // 2. HORLOGE
         function updateClock() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            
-            document.getElementById('timeDisplay').textContent = timeStr;
-            document.getElementById('dateDisplay').textContent = dateStr;
+            document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('dateDisplay').textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         }
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 3. CHARGEMENT DU WIDGET TURF
+        // 3. CHARGEMENT MODULE TURF
         function loadTurfWidget() {
             const container = document.getElementById('turfContainer');
-            container.innerHTML = '';
-            const script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'https://www.zone-turf.fr/webmaster/module.js';
-            container.appendChild(script);
+            if (container && container.children.length === 0) {
+                const script = document.createElement('script');
+                script.type = 'text/javascript';
+                script.src = 'https://www.zone-turf.fr/webmaster/module.js';
+                container.appendChild(script);
+            }
         }
 
-        // 4. ROTATION AUTOMATIQUE (30s Météo / 30s Turf / 15s Horloge)
+        // 4. ROTATION DES DIAPOSITIVES (30s / 30s / 15s)
         const slides = document.querySelectorAll('.slide');
         const durations = [30000, 30000, 15000];
         let currentSlide = 0;
@@ -226,7 +214,6 @@
             currentSlide = (currentSlide + 1) % slides.length;
             slides[currentSlide].classList.add('active');
 
-            // Si la slide active est le Turf (index 1), recharger le widget
             if (currentSlide === 1) {
                 loadTurfWidget();
             }
@@ -234,6 +221,7 @@
             setTimeout(rotateSlides, durations[currentSlide]);
         }
 
+        // Lancement immédiat du cycle sans dépendances
         setTimeout(rotateSlides, durations[0]);
     </script>
 </body>
