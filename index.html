@@ -15,7 +15,7 @@
             border: none;
         }
 
-        /* --- SLIDE 1 : MÉTÉO --- */
+        /* --- SLIDE 1 : MÉTÉO + PRÉVISIONS 7 JOURS --- */
         .weather-container {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: #fff;
@@ -23,10 +23,36 @@
             justify-content: center;
             align-items: center;
             text-align: center;
+            padding: 20px;
         }
-        .weather-city { font-size: 3.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
-        .weather-desc { font-size: 2.5rem; text-transform: capitalize; color: #e0e0e0; }
+        .weather-city { font-size: 2.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .weather-current { display: flex; align-items: center; gap: 20px; margin: 10px 0 25px 0; }
+        .weather-temp { font-size: 6.5rem; font-weight: bold; color: #f2ab00; line-height: 1; }
+        .weather-desc { font-size: 1.8rem; text-transform: capitalize; color: #e0e0e0; text-align: left; }
+
+        /* Grille des 7 jours */
+        .forecast-grid {
+            display: flex;
+            gap: 12px;
+            width: 95%;
+            max-width: 900px;
+            justify-content: center;
+        }
+        .forecast-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 12px 8px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .forecast-day { font-size: 1rem; font-weight: bold; text-transform: capitalize; color: #f2ab00; margin-bottom: 6px; }
+        .forecast-temps { font-size: 0.95rem; font-weight: 600; display: flex; flex-direction: column; gap: 2px; }
+        .temp-max { color: #ffffff; }
+        .temp-min { color: #a0aec0; }
 
         /* --- SLIDE 2 : HIPPIQUE (STYLE ÉPURÉ PMU) --- */
         .turf-container {
@@ -74,7 +100,6 @@
             gap: 12px;
         }
 
-        /* Card Style PMU */
         .pmu-card {
             background: #ffffff;
             border-radius: 18px;
@@ -91,7 +116,6 @@
             gap: 16px;
         }
 
-        /* Badge Réunion / Course ex: R2 C3 */
         .rc-badge {
             background: #e9f0f2;
             color: #5d6d7e;
@@ -103,32 +127,17 @@
             font-size: 1.1rem;
             min-width: 55px;
         }
-        .rc-badge span {
-            display: block;
-        }
+        .rc-badge span { display: block; }
 
         .race-info {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
-        .race-location-name {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-        .race-details-sub {
-            font-size: 0.95rem;
-            color: #7f8c8d;
-            font-weight: 500;
-        }
+        .race-location-name { font-size: 1.25rem; font-weight: 700; color: #2c3e50; }
+        .race-details-sub { font-size: 0.95rem; color: #7f8c8d; font-weight: 500; }
 
-        /* Balls des résultats */
-        .number-balls {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-        }
+        .number-balls { display: flex; gap: 8px; margin-top: 6px; }
         .ball {
             width: 32px;
             height: 32px;
@@ -143,7 +152,6 @@
             border: 1px solid #dcdfe6;
         }
 
-        /* Status à droite */
         .card-right {
             text-align: right;
             display: flex;
@@ -151,17 +159,8 @@
             align-items: flex-end;
             justify-content: center;
         }
-        .status-time {
-            font-size: 0.9rem;
-            color: #7f8c8d;
-            font-weight: 500;
-        }
-        .status-text {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #007a53;
-            margin-top: 2px;
-        }
+        .status-time { font-size: 0.9rem; color: #7f8c8d; font-weight: 500; }
+        .status-text { font-size: 1.05rem; font-weight: 700; color: #007a53; margin-top: 2px; }
 
         /* --- SLIDE 3 : HORLOGE --- */
         .clock-container {
@@ -182,17 +181,24 @@
 </head>
 <body>
 
-    <!-- SLIDE 1 : MÉTÉO -->
+    <!-- SLIDE 1 : MÉTÉO + 7 JOURS -->
     <div id="slide1" class="slide weather-container" style="display: flex;">
         <div class="weather-city">Saint-Priest</div>
-        <div class="weather-temp" id="temp">--°C</div>
-        <div class="weather-desc">Météo en direct</div>
+        <div class="weather-current">
+            <div class="weather-temp" id="temp">--°C</div>
+            <div class="weather-desc">Météo en direct<br><span style="font-size: 1.2rem; color: #f2ab00;">Prévisions 7 jours</span></div>
+        </div>
+        
+        <div class="forecast-grid" id="forecastGrid">
+            <!-- Les 7 jours seront générés ici -->
+            <div style="color: #ccc;">Chargement des prévisions...</div>
+        </div>
     </div>
 
-    <!-- SLIDE 2 : 5 DERNIÈRES COURSES (ÉPURÉ) -->
+    <!-- SLIDE 2 : 5 DERNIÈRES COURSES -->
     <div id="slide2" class="slide turf-container">
         <div class="turf-header-bar">
-            <div class="date-badge" id="currentDateBadge">Lun. 28 Sept.</div>
+            <div class="date-badge" id="currentDateBadge">Aujourd'hui</div>
             <div class="turf-title">Dernières Arrivées</div>
         </div>
         <div class="cards-list" id="races-list">
@@ -207,20 +213,51 @@
     </div>
 
     <script>
-        // 1. MÉTÉO
+        // 1. MÉTÉO ET PRÉVISIONS 7 JOURS
         function updateWeather() {
-            fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
+            const url = 'https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis';
+            
+            fetch(url)
                 .then(r => r.json())
                 .then(d => {
+                    // Météo Actuelle
                     if (d && d.current_weather) {
                         document.getElementById('temp').textContent = Math.round(d.current_weather.temperature) + '°C';
                     }
+
+                    // Prévisions 7 Jours
+                    if (d && d.daily && d.daily.time) {
+                        const grid = document.getElementById('forecastGrid');
+                        grid.innerHTML = '';
+
+                        const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+                        for (let i = 0; i < 7; i++) {
+                            const dateObj = new Date(d.daily.time[i]);
+                            const dayName = i === 0 ? 'Auj.' : days[dateObj.getDay()];
+                            const maxTemp = Math.round(d.daily.temperature_2m_max[i]);
+                            const minTemp = Math.round(d.daily.temperature_2m_min[i]);
+
+                            const card = document.createElement('div');
+                            card.className = 'forecast-card';
+                            card.innerHTML = `
+                                <div class="forecast-day">${dayName}</div>
+                                <div class="forecast-temps">
+                                    <span class="temp-max">${maxTemp}°</span>
+                                    <span class="temp-min">${minTemp}°</span>
+                                </div>
+                            `;
+                            grid.appendChild(card);
+                        }
+                    }
                 })
-                .catch(() => { document.getElementById('temp').textContent = '--°C'; });
+                .catch(() => { 
+                    document.getElementById('temp').textContent = '--°C'; 
+                });
         }
         updateWeather();
 
-        // Mettre à jour la date dans l'en-tête du Turf
+        // Date en-tête Turf
         function updateTurfDateHeader() {
             const now = new Date();
             const days = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
@@ -230,7 +267,7 @@
         }
         updateTurfDateHeader();
 
-        // 2. RÉCUPÉRATION DES COURSES EN STYLE PMU ÉPURÉ
+        // 2. RÉCUPÉRATION DES COURSES
         async function fetchLatest5Races() {
             const listContainer = document.getElementById('races-list');
 
@@ -247,17 +284,14 @@
                         const title = item.title || "Course PMU";
                         const content = item.content || item.description || "";
                         
-                        // Extraire numéros d'arrivée
                         const matches = content.match(/\b([1-9]|1[0-9]|20)\b/g) || [];
                         const numbers = [...new Set(matches)].slice(0, 5);
 
-                        // Extraction ou génération de la réunion/course (R1 C2, etc.)
                         const rcMatch = title.match(/R\d+C\d+/i);
                         const rcCode = rcMatch ? rcMatch[0] : `R1 C${index + 1}`;
                         const rText = rcCode.substring(0, 2);
                         const cText = rcCode.substring(2);
 
-                        // Nettoyage du titre de la course
                         const cleanTitle = title.replace(/R\d+C\d+-?/i, '').trim() || "Prix Spie";
 
                         const card = document.createElement('div');
@@ -294,10 +328,10 @@
                     return;
                 }
             } catch (e) {
-                console.warn("Affichage de secours en mode épuré :", e);
+                console.warn("Affichage de secours :", e);
             }
 
-            // Données de secours sous le nouveau design PMU
+            // Secours
             const fallbackData = [
                 { r: "R2", c: "C2", name: "Prix Spie", sub: "Plat - 3000m - 7 partants", nums: [1, 5, 4, 7, 2], time: "" },
                 { r: "R3", c: "C2", name: "Casablanca - Prix Poesie", sub: "Plat - 1900m - 7 partants", nums: [1, 3, 6, 2, 4], time: "11h35" },
