@@ -275,7 +275,7 @@
         }
         updateWeather();
 
-        // --- 2. COURSES PMU DIRECTS (API DIRECTE PMU.FR) ---
+        // --- 2. COURSES PMU DIRECTS (AVEC PROXY CORS) ---
         function updateTurfDateHeader() {
             const now = new Date();
             const days = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
@@ -292,9 +292,12 @@
             const y = now.getFullYear();
             const dateFormatted = `${d}${m}${y}`;
 
+            // Utilisation du proxy CORS pour contourner le blocage du navigateur
+            const targetApiUrl = `https://online.pmu.fr/rest/client/7/programme/${dateFormatted}`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetApiUrl)}`;
+
             try {
-                // API PMU Officielle
-                const response = await fetch(`https://online.pmu.fr/rest/client/7/programme/${dateFormatted}`);
+                const response = await fetch(proxyUrl);
                 const data = await response.json();
 
                 let completedRaces = [];
@@ -310,7 +313,6 @@
                                 const title = `${hippo} - ${course.libelle || 'Prix'}`;
                                 const discipline = course.discipline || "Plat";
                                 
-                                // Extraction de l'arrivée si disponible
                                 let arrivalNumbers = [];
                                 if (course.ordreArrivee && course.ordreArrivee.length > 0) {
                                     arrivalNumbers = course.ordreArrivee.map(item => Array.isArray(item) ? item[0] : item).slice(0, 5);
@@ -336,7 +338,6 @@
                 }
 
                 if (completedRaces.length > 0) {
-                    // Trier par heure de départ descendante (la plus récente en premier)
                     completedRaces.sort((a, b) => b.timestamp - a.timestamp);
                     const top5 = completedRaces.slice(0, 5);
 
@@ -367,19 +368,19 @@
                     return;
                 }
             } catch (e) {
-                console.warn("Erreur chargement PMU :", e);
+                console.warn("Erreur chargement PMU via Proxy CORS :", e);
             }
 
-            // Affichage d'attente si aucune course n'est encore terminée aujourd'hui
+            // Message informatif si aucune course n'est achevée à cette heure
             listContainer.innerHTML = `
                 <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">
-                    En attente des premières arrivées de la journée...
+                    Aucune arrivée définitive enregistrée pour le moment aujourd'hui.
                 </div>
             `;
         }
 
         fetchLatest5RacesPMU();
-        setInterval(fetchLatest5RacesPMU, 60000); // Mise à jour automatique chaque minute
+        setInterval(fetchLatest5RacesPMU, 60000);
 
         // --- 3. HORLOGE ---
         function updateClock() {
