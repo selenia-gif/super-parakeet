@@ -99,6 +99,7 @@
             border-radius: 10px;
             color: #333;
             text-align: center;
+            min-height: 100px;
         }
 
         /* --- SLIDE 3 : HORLOGE --- */
@@ -153,9 +154,8 @@
                     <div class="num-ball">1</div>
                 </div>
             </div>
-            <div class="turf-widget-wrapper">
-                <script type="text/javascript" src="https://www.zone-turf.fr/webmaster/module.js"></script>
-            </div>
+            <div class="turf-widget-wrapper" id="turfContainer">
+                </div>
         </div>
     </div>
 
@@ -165,7 +165,7 @@
     </div>
 
     <script>
-        // 1. MÉTÉO EN DIRECT (Saint-Priest)
+        // 1. MÉTÉO
         async function fetchWeather() {
             try {
                 const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true');
@@ -206,7 +206,17 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 3. ROTATION (Météo: 30s, Turf: 30s, Horloge: 15s)
+        // 3. CHARGEMENT DU WIDGET TURF
+        function loadTurfWidget() {
+            const container = document.getElementById('turfContainer');
+            container.innerHTML = '';
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://www.zone-turf.fr/webmaster/module.js';
+            container.appendChild(script);
+        }
+
+        // 4. ROTATION AUTOMATIQUE (30s Météo / 30s Turf / 15s Horloge)
         const slides = document.querySelectorAll('.slide');
         const durations = [30000, 30000, 15000];
         let currentSlide = 0;
@@ -215,6 +225,11 @@
             slides[currentSlide].classList.remove('active');
             currentSlide = (currentSlide + 1) % slides.length;
             slides[currentSlide].classList.add('active');
+
+            // Si la slide active est le Turf (index 1), recharger le widget
+            if (currentSlide === 1) {
+                loadTurfWidget();
+            }
 
             setTimeout(rotateSlides, durations[currentSlide]);
         }
