@@ -137,18 +137,18 @@
     <div id="slide2" class="slide turf-container">
         <div class="turf-card">
             <div class="turf-header">
-                <h1 id="race-title">Programme PMU du jour</h1>
+                <h1 id="race-title">Quinté / Direct PMU</h1>
                 <span id="race-status" class="badge">EN DIRECT</span>
             </div>
 
             <!-- PRONOSTIC / FAVORIS -->
-            <div class="section-title">Partants / Favoris</div>
+            <div class="section-title">Partants / Sélection</div>
             <div id="prono-container" class="number-list">
-                <div class="loading-text">Chargement en cours...</div>
+                <div class="loading-text">Mise à jour en cours...</div>
             </div>
 
             <!-- ARRIVÉE / RÉSULTAT -->
-            <div class="section-title">Arrivée Officielle</div>
+            <div class="section-title">Arrivée Officielle du Jour</div>
             <div id="result-container" class="number-list">
                 <div class="loading-text">Recherche des résultats...</div>
             </div>
@@ -175,84 +175,92 @@
         }
         updateWeather();
 
-        // 2. TURF (API PMU via Proxy CORS AllOrigins)
+        // 2. TURF (Multi-proxies pour éviter les indisponibilités)
         async function fetchTurfData() {
-            try {
-                const now = new Date();
-                const day = String(now.getDate()).padStart(2, '0');
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const year = now.getFullYear();
-                const dateStr = `${day}${month}${year}`;
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const dateStr = `${day}${month}${year}`;
 
-                // Utilisation du proxy AllOrigins pour contourner le blocage CORS
-                const pmuUrl = `https://offline.turfinfo.api.pmu.fr/rest/client/7/programme/${dateStr}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(pmuUrl)}`;
+            const targetUrl = `https://offline.turfinfo.api.pmu.fr/rest/client/7/programme/${dateStr}`;
+            
+            // Liste des services de contournement CORS de secours
+            const proxies = [
+                `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+            ];
 
-                const response = await fetch(proxyUrl);
-                const result = await response.json();
-                const data = JSON.parse(result.contents);
+            let data = null;
 
-                if (data && data.programme && data.programme.reunions) {
-                    let selectedCourse = null;
+            for (const proxy of proxies) {
+                try {
+                    const res = await fetch(proxy);
+                    if (!res.ok) continue;
+                    
+                    const resData = await res.json();
+                    data = typeof resData.contents === 'string' ? JSON.parse(resData.contents) : (resData.programme ? resData : JSON.parse(resData));
+                    if (data) break;
+                } catch (e) {
+                    console.warn("Échec proxy, essai du suivant...", e);
+                }
+            }
 
-                    // Recherche de la course événement (Quinté) ou d'une course terminée
-                    for (const reunion of data.programme.reunions) {
-                        if (reunion.courses) {
-                            for (const course of reunion.courses) {
-                                if (course.ordreArrivee && course.ordreArrivee.length > 0) {
-                                    selectedCourse = course; // Priorité aux résultats récents
-                                }
-                                if (course.evenement) {
-                                    selectedCourse = course;
-                                    break;
-                                }
+            if (data && data.programme && data.programme.reunions) {
+                let selectedCourse = null;
+
+                for (const reunion of data.programme.reunions) {
+                    if (reunion.courses) {
+                        for (const course of reunion.courses) {
+                            if (course.ordreArrivee && course.ordreArrivee.length > 0) {
+                                selectedCourse = course;
+                            }
+                            if (course.evenement) {
+                                selectedCourse = course;
+                                break;
                             }
                         }
                     }
+                }
 
-                    if (selectedCourse) {
-                        document.getElementById('race-title').textContent = 
-                            `R${selectedCourse.numReunion}C${selectedCourse.numOrdre} - ${selectedCourse.nom}`;
+                if (selectedCourse) {
+                    document.getElementById('race-title').textContent = 
+                        `R${selectedCourse.numReunion}C${selectedCourse.numOrdre} - ${selectedCourse.nom}`;
 
-                        // Partants / Sélection
-                        const pronoContainer = document.getElementById('prono-container');
-                        pronoContainer.innerHTML = '';
-                        const partants = selectedCourse.numersPartants || [1, 2, 3, 4, 5];
-                        partants.slice(0, 6).forEach(num => {
+                    // Partants
+                    const pronoContainer = document.getElementById('prono-container');
+                    pronoContainer.innerHTML = '';
+                    const partants = selectedCourse.numersPartants || [1, 2, 3, 4, 5];
+                    partants.slice(0, 6).forEach(num => {
+                        const ball = document.createElement('div');
+                        ball.className = 'num-ball prono';
+                        ball.textContent = num;
+                        pronoContainer.appendChild(ball);
+                    });
+
+                    // Arrivée
+                    const resultContainer = document.getElementById('result-container');
+                    resultContainer.innerHTML = '';
+
+                    if (selectedCourse.ordreArrivee && selectedCourse.ordreArrivee.length > 0) {
+                        selectedCourse.ordreArrivee.slice(0, 5).forEach(num => {
                             const ball = document.createElement('div');
-                            ball.className = 'num-ball prono';
+                            ball.className = 'num-ball';
                             ball.textContent = num;
-                            pronoContainer.appendChild(ball);
+                            resultContainer.appendChild(ball);
                         });
-
-                        // Arrivée officielle
-                        const resultContainer = document.getElementById('result-container');
-                        resultContainer.innerHTML = '';
-
-                        if (selectedCourse.ordreArrivee && selectedCourse.ordreArrivee.length > 0) {
-                            selectedCourse.ordreArrivee.slice(0, 5).forEach(num => {
-                                const ball = document.createElement('div');
-                                ball.className = 'num-ball';
-                                ball.textContent = num;
-                                resultContainer.appendChild(ball);
-                            });
-                        } else {
-                            resultContainer.innerHTML = '<div class="loading-text">Départ à venir — Course non terminée</div>';
-                        }
                     } else {
-                        document.getElementById('prono-container').innerHTML = '<div class="loading-text">Pas de course trouvée</div>';
-                        document.getElementById('result-container').innerHTML = '<div class="loading-text">Aucun résultat disponible</div>';
+                        resultContainer.innerHTML = '<div class="loading-text">Course non terminée / En attente des juges</div>';
                     }
                 }
-            } catch (err) {
-                console.error("Erreur d'accès API PMU:", err);
-                document.getElementById('prono-container').innerHTML = '<div class="loading-text">Indisponible (Problème Réseau)</div>';
-                document.getElementById('result-container').innerHTML = '<div class="loading-text">Indisponible</div>';
+            } else {
+                document.getElementById('prono-container').innerHTML = '<div class="loading-text">Indisponible temporairement</div>';
+                document.getElementById('result-container').innerHTML = '<div class="loading-text">Indisponible temporairement</div>';
             }
         }
 
         fetchTurfData();
-        setInterval(fetchTurfData, 120000); // Rafraîchit toutes les 2 minutes
+        setInterval(fetchTurfData, 120000); // Actualisation toutes les 2 minutes
 
         // 3. HORLOGE
         function updateClock() {
