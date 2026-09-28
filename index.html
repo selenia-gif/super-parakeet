@@ -191,21 +191,27 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 3. ROTATION (Météo: 15s / Turf: 30s / Horloge: 15s)
+        // 3. ROTATION (15s Météo / 30s Turf / 15s Horloge)
         const slides = document.querySelectorAll('.slide');
         const durations = [15000, 30000, 15000];
         let currentSlide = 0;
 
-        function cycleSlides() {
+        function nextSlide() {
+            // Masquer la diapositive actuelle
             slides[currentSlide].classList.remove('active');
+            
+            // Passer à la suivante
             currentSlide = (currentSlide + 1) % slides.length;
+            
+            // Afficher la nouvelle diapositive
             slides[currentSlide].classList.add('active');
 
-            setTimeout(cycleSlides, durations[currentSlide]);
+            // Programmer le passage suivant avec le bon délai
+            setTimeout(nextSlide, durations[currentSlide]);
         }
 
-        // Lancement du minuteur
-        setTimeout(cycleSlides, durations[0]);
+        // Lancement du premier passage après 15 secondes
+        setTimeout(nextSlide, durations[0]);
     </script>
 </body>
 </html>
