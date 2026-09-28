@@ -6,7 +6,7 @@
     <title>Affichage Dynamique</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         
         .slide {
             display: none;
@@ -28,85 +28,139 @@
         .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
         .weather-desc { font-size: 2.5rem; text-transform: capitalize; color: #e0e0e0; }
 
-        /* --- SLIDE 2 : 5 DERNIÈRES COURSES --- */
+        /* --- SLIDE 2 : HIPPIQUE (STYLE ÉPURÉ PMU) --- */
         .turf-container {
-            background: #00281e;
-            padding: 20px;
+            background: #eef4f8;
+            padding: 25px;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
-            color: #fff;
-        }
-        .turf-card {
-            background: #001a13;
-            border: 3px solid #f2ab00;
-            border-radius: 16px;
-            width: 95%;
-            max-width: 950px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            padding: 20px 25px;
-        }
-        .turf-header {
-            border-bottom: 2px solid #f2ab00;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .turf-header h1 { font-size: 1.8rem; text-transform: uppercase; color: #f2ab00; }
-        .badge {
-            background: #d90429;
-            color: #fff;
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            animation: blink 1.5s infinite;
-        }
-        
-        .race-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(255, 255, 255, 0.05);
-            margin-bottom: 10px;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border-left: 4px solid #f2ab00;
-        }
-        .race-name {
-            font-size: 1.1rem;
-            font-weight: bold;
-            width: 40%;
-            white-space: nowrap;
+            color: #1a1a1a;
             overflow: hidden;
-            text-overflow: ellipsis;
         }
-        .number-list {
+        .turf-header-bar {
+            width: 100%;
+            max-width: 850px;
             display: flex;
-            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 5px;
         }
-        .num-ball {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: #ffffff;
-            color: #00281e;
+        .date-badge {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
+            gap: 10px;
+            background: #004d3d;
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .turf-title {
+            font-size: 1.6rem;
             font-weight: bold;
-            border: 2px solid #f2ab00;
+            color: #004d3d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .loading-text {
-            color: #aaa;
-            font-style: italic;
-            font-size: 1.2rem;
+        .cards-list {
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Card Style PMU */
+        .pmu-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 14px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Badge Réunion / Course ex: R2 C3 */
+        .rc-badge {
+            background: #e9f0f2;
+            color: #5d6d7e;
+            border-radius: 12px;
+            padding: 8px 12px;
             text-align: center;
-            padding: 20px 0;
+            font-weight: 800;
+            line-height: 1.1;
+            font-size: 1.1rem;
+            min-width: 55px;
+        }
+        .rc-badge span {
+            display: block;
+        }
+
+        .race-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .race-location-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .race-details-sub {
+            font-size: 0.95rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        /* Balls des résultats */
+        .number-balls {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .ball {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f1f5f8;
+            color: #1a252f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            border: 1px solid #dcdfe6;
+        }
+
+        /* Status à droite */
+        .card-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .status-time {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        .status-text {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #007a53;
+            margin-top: 2px;
         }
 
         /* --- SLIDE 3 : HORLOGE --- */
@@ -124,8 +178,6 @@
             font-family: 'Courier New', Courier, monospace;
         }
         .clock-date { font-size: 2.2rem; margin-top: 15px; color: #ccc; text-transform: capitalize; }
-
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -137,16 +189,14 @@
         <div class="weather-desc">Météo en direct</div>
     </div>
 
-    <!-- SLIDE 2 : 5 DERNIÈRES COURSES -->
+    <!-- SLIDE 2 : 5 DERNIÈRES COURSES (ÉPURÉ) -->
     <div id="slide2" class="slide turf-container">
-        <div class="turf-card">
-            <div class="turf-header">
-                <h1>Dernières Arrivées (5 courses)</h1>
-                <span class="badge">EN DIRECT</span>
-            </div>
-            <div id="races-list">
-                <div class="loading-text">Chargement des 5 derniers résultats...</div>
-            </div>
+        <div class="turf-header-bar">
+            <div class="date-badge" id="currentDateBadge">Lun. 28 Sept.</div>
+            <div class="turf-title">Dernières Arrivées</div>
+        </div>
+        <div class="cards-list" id="races-list">
+            <div style="text-align:center; padding: 40px; color:#7f8c8d; font-size:1.2rem;">Chargement des résultats...</div>
         </div>
     </div>
 
@@ -170,7 +220,17 @@
         }
         updateWeather();
 
-        // 2. RÉCUPÉRATION DES 5 DERNIÈRES COURSES
+        // Mettre à jour la date dans l'en-tête du Turf
+        function updateTurfDateHeader() {
+            const now = new Date();
+            const days = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
+            const months = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
+            const dateStr = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
+            document.getElementById('currentDateBadge').textContent = dateStr;
+        }
+        updateTurfDateHeader();
+
+        // 2. RÉCUPÉRATION DES COURSES EN STYLE PMU ÉPURÉ
         async function fetchLatest5Races() {
             const listContainer = document.getElementById('races-list');
 
@@ -183,52 +243,93 @@
                     listContainer.innerHTML = '';
                     const top5 = data.items.slice(0, 5);
 
-                    top5.forEach(item => {
+                    top5.forEach((item, index) => {
                         const title = item.title || "Course PMU";
                         const content = item.content || item.description || "";
                         
+                        // Extraire numéros d'arrivée
                         const matches = content.match(/\b([1-9]|1[0-9]|20)\b/g) || [];
                         const numbers = [...new Set(matches)].slice(0, 5);
 
-                        const row = document.createElement('div');
-                        row.className = 'race-row';
+                        // Extraction ou génération de la réunion/course (R1 C2, etc.)
+                        const rcMatch = title.match(/R\d+C\d+/i);
+                        const rcCode = rcMatch ? rcMatch[0] : `R1 C${index + 1}`;
+                        const rText = rcCode.substring(0, 2);
+                        const cText = rcCode.substring(2);
 
-                        const raceTitle = document.createElement('div');
-                        raceTitle.className = 'race-name';
-                        raceTitle.textContent = title;
+                        // Nettoyage du titre de la course
+                        const cleanTitle = title.replace(/R\d+C\d+-?/i, '').trim() || "Prix Spie";
 
-                        const numList = document.createElement('div');
-                        numList.className = 'number-list';
+                        const card = document.createElement('div');
+                        card.className = 'pmu-card';
 
+                        let ballsHtml = '';
                         if (numbers.length > 0) {
                             numbers.forEach(n => {
-                                const ball = document.createElement('div');
-                                ball.className = 'num-ball';
-                                ball.textContent = n;
-                                numList.appendChild(ball);
+                                ballsHtml += `<div class="ball">${n}</div>`;
                             });
                         } else {
-                            numList.innerHTML = '<span style="color:#aaa;">Arrivée non disponible</span>';
+                            ballsHtml = '<span style="color:#a0aec0; font-size:0.9rem;">En attente des résultats</span>';
                         }
 
-                        row.appendChild(raceTitle);
-                        row.appendChild(numList);
-                        listContainer.appendChild(row);
+                        card.innerHTML = `
+                            <div class="card-left">
+                                <div class="rc-badge">
+                                    <span>${rText}</span>
+                                    <span>${cText}</span>
+                                </div>
+                                <div class="race-info">
+                                    <div class="race-location-name">${cleanTitle}</div>
+                                    <div class="race-details-sub">Plat - Arrivée confirmée</div>
+                                    <div class="number-balls">${ballsHtml}</div>
+                                </div>
+                            </div>
+                            <div class="card-right">
+                                <div class="status-time">Arrivée</div>
+                                <div class="status-text">Définitive</div>
+                            </div>
+                        `;
+                        listContainer.appendChild(card);
                     });
                     return;
                 }
             } catch (e) {
-                console.warn("Bascule vers affichage de secours :", e);
+                console.warn("Affichage de secours en mode épuré :", e);
             }
 
-            // Structure de secours
-            listContainer.innerHTML = `
-                <div class="race-row"><div class="race-name">R1C4 - Prix de Vincennes</div><div class="number-list"><div class="num-ball">4</div><div class="num-ball">12</div><div class="num-ball">7</div><div class="num-ball">2</div><div class="num-ball">9</div></div></div>
-                <div class="race-row"><div class="race-name">R1C3 - Prix de Deauville</div><div class="number-list"><div class="num-ball">1</div><div class="num-ball">8</div><div class="num-ball">15</div><div class="num-ball">3</div><div class="num-ball">6</div></div></div>
-                <div class="race-row"><div class="race-name">R2C5 - Grand Prix d'Enghien</div><div class="number-list"><div class="num-ball">10</div><div class="num-ball">5</div><div class="num-ball">14</div><div class="num-ball">11</div><div class="num-ball">8</div></div></div>
-                <div class="race-row"><div class="race-name">R3C1 - Prix de Chantilly</div><div class="number-list"><div class="num-ball">3</div><div class="num-ball">7</div><div class="num-ball">2</div><div class="num-ball">13</div><div class="num-ball">5</div></div></div>
-                <div class="race-row"><div class="race-name">R1C2 - Prix de Cabourg</div><div class="number-list"><div class="num-ball">6</div><div class="num-ball">9</div><div class="num-ball">1</div><div class="num-ball">4</div><div class="num-ball">11</div></div></div>
-            `;
+            // Données de secours sous le nouveau design PMU
+            const fallbackData = [
+                { r: "R2", c: "C2", name: "Prix Spie", sub: "Plat - 3000m - 7 partants", nums: [1, 5, 4, 7, 2], time: "" },
+                { r: "R3", c: "C2", name: "Casablanca - Prix Poesie", sub: "Plat - 1900m - 7 partants", nums: [1, 3, 6, 2, 4], time: "11h35" },
+                { r: "R2", c: "C3", name: "Craon - Prix Loxam", sub: "Attelé - 2750m - 18 partants", nums: [17, 1, 2, 16, 13], time: "11h51" },
+                { r: "R3", c: "C3", name: "Casablanca - Prix Mezouar", sub: "Plat - 2100m - 10 partants", nums: [3, 2, 4, 1, 5], time: "12h07" },
+                { r: "R2", c: "C4", name: "Craon - Prix de la Communauté", sub: "Haies - 3700m - 12 partants", nums: [6, 9, 1, 4, 11], time: "12h23" }
+            ];
+
+            listContainer.innerHTML = '';
+            fallbackData.forEach(d => {
+                const balls = d.nums.map(n => `<div class="ball">${n}</div>`).join('');
+                const card = document.createElement('div');
+                card.className = 'pmu-card';
+                card.innerHTML = `
+                    <div class="card-left">
+                        <div class="rc-badge">
+                            <span>${d.r}</span>
+                            <span>${d.c}</span>
+                        </div>
+                        <div class="race-info">
+                            <div class="race-location-name">${d.name}</div>
+                            <div class="race-details-sub">${d.sub}</div>
+                            <div class="number-balls">${balls}</div>
+                        </div>
+                    </div>
+                    <div class="card-right">
+                        <div class="status-time">${d.time ? d.time + ' - ' : ''}Arrivée</div>
+                        <div class="status-text">Définitive</div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
         }
 
         fetchLatest5Races();
@@ -243,12 +344,12 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 4. ROTATION DES ÉCRANS (20s Météo / 20s Turf / 20s Horloge)
+        // 4. ROTATION DES ÉCRANS (20s par slide)
         const s1 = document.getElementById('slide1');
         const s2 = document.getElementById('slide2');
         const s3 = document.getElementById('slide3');
 
-        const DUREE_SLIDE = 20000; // 20 secondes
+        const DUREE_SLIDE = 20000;
 
         function showSlide2() {
             s1.style.display = 'none';
