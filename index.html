@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affichage Dynamique</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+        .slide.active {
+            display: flex !important;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- SLIDE 1 : MÉTÉO --- */
+        .weather-container {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .weather-city { font-size: 3.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
+        .weather-desc { font-size: 2.5rem; text-transform: capitalize; color: #e0e0e0; }
+
+        /* --- SLIDE 2 : TURF PMU --- */
+        .pmu-container {
+            background: #003a2b;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .pmu-card {
+            background: #00281e;
+            border: 4px solid #f2ab00;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 1000px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            overflow: hidden;
+            color: #fff;
+        }
+        .pmu-header {
+            background: #f2ab00;
+            color: #00281e;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+        .pmu-header h1 { font-size: 2rem; text-transform: uppercase; }
+        .pmu-header .live-tag {
+            background: #d90429;
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            animation: blink 1.5s infinite;
+        }
+        .quinte-section { padding: 20px; text-align: center; }
+        .quinte-title { font-size: 1.4rem; color: #f2ab00; margin-bottom: 15px; text-transform: uppercase; font-weight: bold; }
+        .numbers-container { display: flex; justify-content: center; gap: 12px; }
+        .num-ball {
+            background: #ffffff;
+            color: #00281e;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            border: 3px solid #f2ab00;
+        }
+        .num-ball.base { background: #f2ab00; color: #00281e; }
+        
+        .turf-iframe {
+            width: 100%;
+            height: 250px;
+            border: none;
+            background: #fff;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        /* --- SLIDE 3 : HORLOGE --- */
+        .clock-container {
+            background: #111;
+            color: #fff;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .clock-time {
+            font-size: 9rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #f2ab00;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .clock-date {
+            font-size: 2.5rem;
+            margin-top: 15px;
+            color: #ccc;
+            text-transform: capitalize;
+        }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1 : MÉTÉO -->
+    <div class="slide active weather-container">
+        <div class="weather-city">Saint-Priest</div>
+        <div class="weather-temp" id="temp">--°C</div>
+        <div class="weather-desc">Météo en direct</div>
+    </div>
+
+    <!-- SLIDE 2 : TURF PMU -->
+    <div class="slide pmu-container">
+        <div class="pmu-card">
+            <div class="pmu-header">
+                <h1>Espace Turf — Pronostics</h1>
+                <span class="live-tag">EN DIRECT</span>
+            </div>
+            <div class="quinte-section">
+                <div class="quinte-title">Sélection du Quinté+</div>
+                <div class="numbers-container">
+                    <div class="num-ball base">8</div>
+                    <div class="num-ball base">3</div>
+                    <div class="num-ball">12</div>
+                    <div class="num-ball">5</div>
+                    <div class="num-ball">1</div>
+                </div>
+                <iframe class="turf-iframe" srcdoc="<style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;}</style><script type='text/javascript' src='https://www.zone-turf.fr/webmaster/module.js'></script>"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3 : HORLOGE -->
+    <div class="slide clock-container">
+        <div class="clock-time" id="timeDisplay">00:00:00</div>
+        <div class="clock-date" id="dateDisplay">---</div>
+    </div>
+
+    <script>
+        // 1. MÉTÉO
+        function updateWeather() {
+            fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.current_weather) {
+                        document.getElementById('temp').textContent = Math.round(d.current_weather.temperature) + '°C';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('temp').textContent = '20°C';
+                });
+        }
+        updateWeather();
+
+        // 2. HORLOGE
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('dateDisplay').textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 3. ROTATION (15s Météo / 30s Turf / 15s Horloge)
+        const slides = document.querySelectorAll('.slide');
+        const durations = [15000, 30000, 15000];
+        let currentSlide = 0;
+
+        function nextSlide() {
+            // Masquer la diapositive actuelle
+            slides[currentSlide].classList.remove('active');
+            
+            // Passer à la suivante
+            currentSlide = (currentSlide + 1) % slides.length;
+            
+            // Afficher la nouvelle diapositive
+            slides[currentSlide].classList.add('active');
+
+            // Programmer le passage suivant avec le bon délai
+            setTimeout(nextSlide, durations[currentSlide]);
+        }
+
+        // Lancement du premier passage après 15 secondes
+        setTimeout(nextSlide, durations[0]);
+    </script>
+</body>
+</html>
