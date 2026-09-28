@@ -21,7 +21,23 @@
             align-items: center;
         }
 
-        /* --- STYLES PMU --- */
+        /* --- SLIDE 1 : MÉTÉO (Style Épuré) --- */
+        .weather-container {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .weather-city { font-size: 3rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
+        .weather-desc { font-size: 2.2rem; text-transform: capitalize; color: #e0e0e0; }
+
+        /* --- SLIDE 2 : STYLES PMU --- */
         .pmu-container {
             background: #003a2b;
             width: 100%;
@@ -85,7 +101,7 @@
             text-align: center;
         }
 
-        /* --- STYLES HORLOGE MAISON --- */
+        /* --- SLIDE 3 : HORLOGE --- */
         .clock-container {
             background: #111;
             color: #fff;
@@ -97,15 +113,15 @@
             align-items: center;
         }
         .clock-time {
-            font-size: 8rem;
+            font-size: 9rem;
             font-weight: bold;
             letter-spacing: 2px;
             color: #f2ab00;
-            font-family: monospace;
+            font-family: 'Courier New', Courier, monospace;
         }
         .clock-date {
             font-size: 2.5rem;
-            margin-top: 10px;
+            margin-top: 15px;
             color: #ccc;
             text-transform: capitalize;
         }
@@ -115,8 +131,12 @@
 </head>
 <body>
 
-    <!-- SLIDE 1 : Météo Saint-Priest (URL intégrable corrigée) -->
-    <iframe class="slide active" src="https://widget.meteoblue.com/fr/server/fallback?loc=saint-priest_france_2977356"></iframe>
+    <!-- SLIDE 1 : Météo Saint-Priest (En Direct via API) -->
+    <div class="slide active weather-container">
+        <div class="weather-city">Saint-Priest</div>
+        <div class="weather-temp" id="temp">--°C</div>
+        <div class="weather-desc" id="weatherDesc">Chargement météo...</div>
+    </div>
 
     <!-- SLIDE 2 : Turf PMU -->
     <div class="slide pmu-container">
@@ -141,14 +161,44 @@
         </div>
     </div>
 
-    <!-- SLIDE 3 : Horloge Intégrée (Ne sera jamais bloquée) -->
+    <!-- SLIDE 3 : Horloge -->
     <div class="slide clock-container">
         <div class="clock-time" id="timeDisplay">00:00:00</div>
         <div class="clock-date" id="dateDisplay">---</div>
     </div>
 
     <script>
-        // HORLOGE EN TEMPS RÉEL
+        // 1. GESTION DE LA MÉTÉO (API Open-Meteo gratuite sans clé)
+        async function fetchWeather() {
+            try {
+                // Coordonnées de Saint-Priest : Lat 45.696, Lon 4.945
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true');
+                const data = await res.json();
+                
+                const temp = Math.round(data.current_weather.temperature);
+                const code = data.current_weather.weathercode;
+
+                document.getElementById('temp').textContent = temp + '°C';
+                document.getElementById('weatherDesc').textContent = getWeatherDescription(code);
+            } catch (e) {
+                document.getElementById('weatherDesc').textContent = 'Météo indisponible';
+            }
+        }
+
+        function getWeatherDescription(code) {
+            if (code === 0) return "Ciel dégagé";
+            if (code >= 1 && code <= 3) return "Partiellement nuageux";
+            if (code >= 45 && code <= 48) return "Brouillard";
+            if (code >= 51 && code <= 67) return "Pluie faible";
+            if (code >= 71 && code <= 77) return "Chutes de neige";
+            if (code >= 80 && code <= 82) return "Averses de pluie";
+            if (code >= 95) return "Orage";
+            return "Nuageux";
+        }
+        fetchWeather();
+        setInterval(fetchWeather, 600000); // Mise à jour météo toutes les 10 min
+
+        // 2. GESTION DE L'HORLOGE
         function updateClock() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -160,9 +210,9 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // ROTATION DES SLIDES
+        // 3. ROTATION DES SLIDES (Météo: 30s, Turf: 30s, Horloge: 15s)
         const slides = document.querySelectorAll('.slide');
-        const durations = [30000, 30000, 15000]; // Météo: 30s, Turf: 30s, Horloge: 15s
+        const durations = [30000, 30000, 15000];
         let currentSlide = 0;
 
         function rotateSlides() {
