@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Affichage Dynamique Test</title>
+    <title>Affichage Dynamique</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Helvetica Neue', Arial, sans-serif; }
@@ -21,7 +21,7 @@
             align-items: center;
         }
 
-        /* --- MÉTÉO --- */
+        /* --- SLIDE 1 : MÉTÉO --- */
         .weather-container {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: #fff;
@@ -35,8 +35,9 @@
         }
         .weather-city { font-size: 3.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
         .weather-temp { font-size: 8rem; font-weight: bold; margin: 10px 0; color: #f2ab00; }
+        .weather-desc { font-size: 2.5rem; text-transform: capitalize; color: #e0e0e0; }
 
-        /* --- TURF --- */
+        /* --- SLIDE 2 : TURF PMU --- */
         .pmu-container {
             background: #003a2b;
             width: 100%;
@@ -66,6 +67,14 @@
             font-weight: bold;
         }
         .pmu-header h1 { font-size: 2rem; text-transform: uppercase; }
+        .pmu-header .live-tag {
+            background: #d90429;
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            animation: blink 1.5s infinite;
+        }
         .quinte-section { padding: 20px; text-align: center; }
         .quinte-title { font-size: 1.4rem; color: #f2ab00; margin-bottom: 15px; text-transform: uppercase; font-weight: bold; }
         .numbers-container { display: flex; justify-content: center; gap: 12px; }
@@ -83,6 +92,7 @@
             border: 3px solid #f2ab00;
         }
         .num-ball.base { background: #f2ab00; color: #00281e; }
+        
         .turf-iframe {
             width: 100%;
             height: 250px;
@@ -92,7 +102,7 @@
             margin-top: 15px;
         }
 
-        /* --- HORLOGE --- */
+        /* --- SLIDE 3 : HORLOGE --- */
         .clock-container {
             background: #111;
             color: #fff;
@@ -106,24 +116,35 @@
         .clock-time {
             font-size: 9rem;
             font-weight: bold;
+            letter-spacing: 2px;
             color: #f2ab00;
             font-family: 'Courier New', Courier, monospace;
         }
-        .clock-date { font-size: 2.5rem; margin-top: 15px; color: #ccc; text-transform: capitalize; }
+        .clock-date {
+            font-size: 2.5rem;
+            margin-top: 15px;
+            color: #ccc;
+            text-transform: capitalize;
+        }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
+    <!-- SLIDE 1 : MÉTÉO -->
     <div class="slide active weather-container">
         <div class="weather-city">Saint-Priest</div>
         <div class="weather-temp" id="temp">--°C</div>
-        <div style="font-size:2rem;">Météo en direct</div>
+        <div class="weather-desc">Météo en direct</div>
     </div>
 
+    <!-- SLIDE 2 : TURF PMU -->
     <div class="slide pmu-container">
         <div class="pmu-card">
             <div class="pmu-header">
                 <h1>Espace Turf — Pronostics</h1>
+                <span class="live-tag">EN DIRECT</span>
             </div>
             <div class="quinte-section">
                 <div class="quinte-title">Sélection du Quinté+</div>
@@ -139,19 +160,29 @@
         </div>
     </div>
 
+    <!-- SLIDE 3 : HORLOGE -->
     <div class="slide clock-container">
         <div class="clock-time" id="timeDisplay">00:00:00</div>
         <div class="clock-date" id="dateDisplay">---</div>
     </div>
 
     <script>
-        // Météo
-        fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
-            .then(r => r.json())
-            .then(d => { if(d && d.current_weather) document.getElementById('temp').textContent = Math.round(d.current_weather.temperature) + '°C'; })
-            .catch(() => { document.getElementById('temp').textContent = '20°C'; });
+        // 1. MÉTÉO
+        function updateWeather() {
+            fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.current_weather) {
+                        document.getElementById('temp').textContent = Math.round(d.current_weather.temperature) + '°C';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('temp').textContent = '20°C';
+                });
+        }
+        updateWeather();
 
-        // Horloge
+        // 2. HORLOGE
         function updateClock() {
             const now = new Date();
             document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -160,15 +191,21 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Rotation rapide pour test (5 secondes par écran)
+        // 3. ROTATION (Météo: 15s / Turf: 30s / Horloge: 15s)
         const slides = document.querySelectorAll('.slide');
+        const durations = [15000, 30000, 15000];
         let currentSlide = 0;
 
-        setInterval(() => {
+        function cycleSlides() {
             slides[currentSlide].classList.remove('active');
             currentSlide = (currentSlide + 1) % slides.length;
             slides[currentSlide].classList.add('active');
-        }, 5000);
+
+            setTimeout(cycleSlides, durations[currentSlide]);
+        }
+
+        // Lancement du minuteur
+        setTimeout(cycleSlides, durations[0]);
     </script>
 </body>
 </html>
