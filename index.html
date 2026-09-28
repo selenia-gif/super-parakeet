@@ -56,31 +56,32 @@
             font-weight: bold;
         }
         .pmu-header h1 { font-size: 2rem; text-transform: uppercase; }
-        .quinte-section { padding: 20px; text-align: center; }
-        .quinte-title { font-size: 1.4rem; color: #f2ab00; margin-bottom: 15px; text-transform: uppercase; font-weight: bold; }
-        .numbers-container { display: flex; justify-content: center; gap: 12px; }
+        .live-tag {
+            background: #d90429;
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            animation: blink 1.5s infinite;
+        }
+        .quinte-section { padding: 30px 20px; text-align: center; }
+        .quinte-title { font-size: 1.6rem; color: #f2ab00; margin-bottom: 25px; text-transform: uppercase; font-weight: bold; }
+        .numbers-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .num-ball {
             background: #ffffff;
             color: #00281e;
-            width: 60px;
-            height: 60px;
+            width: 75px;
+            height: 75px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             font-weight: bold;
-            border: 3px solid #f2ab00;
+            border: 4px solid #f2ab00;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .num-ball.base { background: #f2ab00; color: #00281e; }
-        .turf-iframe {
-            width: 100%;
-            height: 250px;
-            border: none;
-            background: #fff;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
 
         /* --- SLIDE 3 : HORLOGE --- */
         .clock-container {
@@ -97,6 +98,8 @@
             font-family: 'Courier New', Courier, monospace;
         }
         .clock-date { font-size: 2.2rem; margin-top: 15px; color: #ccc; text-transform: capitalize; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -104,7 +107,7 @@
     <!-- SLIDE 1 : MÉTÉO -->
     <div id="slide1" class="slide weather-container" style="display: flex;">
         <div class="weather-city">Saint-Priest</div>
-        <div class="weather-temp" id="temp">20°C</div>
+        <div class="weather-temp" id="temp">--°C</div>
         <div class="weather-desc">Météo en direct</div>
     </div>
 
@@ -112,18 +115,14 @@
     <div id="slide2" class="slide pmu-container">
         <div class="pmu-card">
             <div class="pmu-header">
-                <h1>Espace Turf — Pronostics</h1>
+                <h1>Dernier Résultat PMU</h1>
+                <span class="live-tag">EN DIRECT</span>
             </div>
             <div class="quinte-section">
-                <div class="quinte-title">Sélection du Quinté+</div>
-                <div class="numbers-container">
-                    <div class="num-ball base">8</div>
-                    <div class="num-ball base">3</div>
-                    <div class="num-ball">12</div>
-                    <div class="num-ball">5</div>
-                    <div class="num-ball">1</div>
+                <div id="course-title" class="quinte-title">Recherche des résultats...</div>
+                <div class="numbers-container" id="pmu-results">
+                    <!-- Les numéros arrivés s'afficheront ici -->
                 </div>
-                <iframe class="turf-iframe" srcdoc="<style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;}</style><script type='text/javascript' src='https://www.zone-turf.fr/webmaster/module.js'></script>"></iframe>
             </div>
         </div>
     </div>
@@ -135,13 +134,71 @@
     </div>
 
     <script>
-        // Météo API
-        fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
-            .then(r => r.json())
-            .then(d => { if (d && d.current_weather) document.getElementById('temp').textContent = Math.round(d.current_weather.temperature) + '°C'; })
-            .catch(() => {});
+        // 1. MÉTÉO API (Open-Meteo)
+        function updateWeather() {
+            fetch('https://api.open-meteo.com/v1/forecast?latitude=45.696&longitude=4.945&current_weather=true')
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.current_weather) {
+                        document.getElementById('temp').textContent = Math.round(d.current_weather.temperature) + '°C';
+                    }
+                })
+                .catch(() => { document.getElementById('temp').textContent = '--°C'; });
+        }
+        updateWeather();
 
-        // Horloge
+        // 2. PMU API (Officiel)
+        async function fetchPMUResults() {
+            try {
+                const today = new Date();
+                const day = String(today.getDate()).padStart(2, '0');
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const year = today.getFullYear();
+                const dateStr = `${day}${month}${year}`;
+
+                const response = await fetch(`https://online.pmu.fr/rest/client/7/programme/${dateStr}`);
+                const data = await response.json();
+
+                if (data && data.reunions) {
+                    let lastFinishedCourse = null;
+
+                    for (const reunion of data.reunions) {
+                        if (reunion.courses) {
+                            for (const course of reunion.courses) {
+                                if (course.statut === 'ARRIVEE' && course.ordreArrivee) {
+                                    lastFinishedCourse = course;
+                                }
+                            }
+                        }
+                    }
+
+                    if (lastFinishedCourse) {
+                        document.getElementById('course-title').textContent = 
+                            `R${lastFinishedCourse.numReunion}C${lastFinishedCourse.numOrdre} - ${lastFinishedCourse.nom}`;
+                        
+                        const top5 = lastFinishedCourse.ordreArrivee.slice(0, 5);
+                        const container = document.getElementById('pmu-results');
+                        container.innerHTML = '';
+
+                        top5.forEach((num, index) => {
+                            const ball = document.createElement('div');
+                            ball.className = index < 3 ? 'num-ball base' : 'num-ball';
+                            ball.textContent = num;
+                            container.appendChild(ball);
+                        });
+                    } else {
+                        document.getElementById('course-title').textContent = "En attente des premiers résultats du jour";
+                    }
+                }
+            } catch (error) {
+                console.error("Erreur PMU API:", error);
+                document.getElementById('course-title').textContent = "Résultats temporairement indisponibles";
+            }
+        }
+        fetchPMUResults();
+        setInterval(fetchPMUResults, 180000); // Mise à jour toutes les 3 min
+
+        // 3. HORLOGE
         function updateClock() {
             const now = new Date();
             document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -150,7 +207,7 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // GESTION DU DÉFILEMENT (15s / 30s / 15s)
+        // 4. ROTATION DES ÉCRANS (15s Météo / 30s PMU / 15s Horloge)
         const s1 = document.getElementById('slide1');
         const s2 = document.getElementById('slide2');
         const s3 = document.getElementById('slide3');
@@ -159,24 +216,23 @@
             s1.style.display = 'none';
             s2.style.display = 'flex';
             s3.style.display = 'none';
-            setTimeout(showSlide3, 30000); // Reste 30s sur le Turf
+            setTimeout(showSlide3, 30000);
         }
 
         function showSlide3() {
             s1.style.display = 'none';
             s2.style.display = 'none';
             s3.style.display = 'flex';
-            setTimeout(showSlide1, 15000); // Reste 15s sur l'Horloge
+            setTimeout(showSlide1, 15000);
         }
 
         function showSlide1() {
             s1.style.display = 'flex';
             s2.style.display = 'none';
             s3.style.display = 'none';
-            setTimeout(showSlide2, 15000); // Reste 15s sur la Météo
+            setTimeout(showSlide2, 15000);
         }
 
-        // Démarrage du cycle après 15 secondes
         setTimeout(showSlide2, 15000);
     </script>
 </body>
